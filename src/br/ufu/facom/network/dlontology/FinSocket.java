@@ -3,6 +3,8 @@ import java.util.Map;
 
 public class FinSocket {
 	
+	public static final int MAX_FRAME_SIZE = 1500;
+	
 	//Descritor do socket em uso.
 	private int socket = -1;
 	//Nome da interface em uso.
@@ -90,8 +92,8 @@ public class FinSocket {
 				}
 			}
 
-			bytes = new byte[1518];// TODO hard code
-			finRead(socket, bytes, 0, 1518);// TODO hard code
+			bytes = new byte[FinSocket.MAX_FRAME_SIZE];// TODO hard code
+			finRead(socket, bytes, 0, FinSocket.MAX_FRAME_SIZE);// TODO hard code
 		} else {
 			throw new RuntimeException("FinSocket não aberto!");
 		}

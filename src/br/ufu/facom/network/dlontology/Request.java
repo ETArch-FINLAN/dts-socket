@@ -2,7 +2,6 @@ package br.ufu.facom.network.dlontology;
 
 import java.nio.ByteBuffer;
 
-import br.ufu.facom.network.dlontology.util.Util;
 import br.ufu.mehar.dts.Dts.ControlRequest;
 import br.ufu.mehar.dts.Dts.ControlRequest.Builder;
 import br.ufu.mehar.dts.Dts.ControlRequest.RequestType;
@@ -65,9 +64,9 @@ public class Request {
 
 		ByteBuffer bbuffer = ByteBuffer.allocate(cRequest.length + messageRequest.length + 18);
 
-		byte[] newMessage = bbuffer.put(Util.ADDR)
+		byte[] newMessage = bbuffer.put(DTSSocket.ADDR)
 				.put(addrMac)
-				.putShort(Util.ETHERTYPE)
+				.putShort(DTSSocket.ETHERTYPE)
 				.putShort((short) (((cRequest.length>>8)&0xff) + ((cRequest.length << 8)&0xff00)))
 				.put(cRequest)
 				.putShort((short) (((messageRequest.length>>8)&0xff) + ((messageRequest.length << 8)&0xff00)))

@@ -3,14 +3,7 @@ package br.ufu.facom.network.dlontology.util;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 
-import br.ufu.facom.network.dlontology.EntitySocket;
-import br.ufu.facom.network.dlontology.WorkspaceSocket;
-import br.ufu.facom.network.dlontology.exception.DTSException;
-
 public class Util {
-	
-	public static byte[] ADDR = "DTS\0\0\0".getBytes();
-	public static short ETHERTYPE = 0x0880;
 	
 	public static byte[] hexStringToByteArray(String s) {
 	    int len = s.length();

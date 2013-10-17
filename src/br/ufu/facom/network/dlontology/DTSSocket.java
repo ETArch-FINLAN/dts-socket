@@ -10,6 +10,9 @@ import br.ufu.mehar.dts.Dts.ControlResponse;
 import com.google.protobuf.GeneratedMessage;
 
 public class DTSSocket extends FinSocket {
+	
+	public static final byte[] ADDR = "DTS\0\0\0".getBytes();
+	public static final short ETHERTYPE = 0x0880;
 
 	private long id = 0;
 
@@ -56,27 +59,80 @@ public class DTSSocket extends FinSocket {
 	
 	protected byte[] recieveFiltre(byte addr[]) {
 		
-		while(true) {
+		byte fullMsg[] = null;
+		boolean fragmented = false;
+		byte[] recievedAddr = new byte[6];
+		byte[] data = new byte[DTSSocket.MAX_FRAME_SIZE];
+		
+		do {
 			
-			byte[] data = read();
-			byte[] recievedAddr = Arrays.copyOfRange(data, 6, 12);
-			
+			data = read();
+			recievedAddr = Arrays.copyOfRange(data, 6, 12);
 			if(Arrays.equals(addr, recievedAddr)) {
-				return Arrays.copyOfRange(data, 14, data.length - 1);
+				
+				fragmented = data[14] == (byte)1;
+				
+				if(fullMsg == null) {//Se é o primeiro pacote 
+					fullMsg = Arrays.copyOfRange(data, 15, data.length);
+				} else {
+					byte[] payload1 = fullMsg;
+					byte[] payload2 = Arrays.copyOfRange(data, 15, data.length);
+					byte[] payloadMerged = new byte[payload1.length + payload2.length];
+					
+					System.arraycopy(payload1, 0, payloadMerged, 0, payload1.length);
+					System.arraycopy(payload2, 0, payloadMerged, payload1.length, payload2.length);
+					
+					fullMsg = payloadMerged;
+				}
 			}
 			
-		}
+		} while(fragmented == true || !Arrays.equals(addr, recievedAddr));
+		
+		return fullMsg;
 		
 	}
 	
-	protected void send(byte addr[], byte[] msg) {
+	protected void send(byte addr[], byte msg[]) {
 		
-		ByteBuffer bbuffer = ByteBuffer.allocate(addr.length + Short.SIZE + msg.length);
-		bbuffer.put(addr)
-			.putShort(Util.ETHERTYPE)
-			.put(msg);
+		int headerSize = addr.length + (Short.SIZE/8) + (Byte.SIZE/8);//Address + ethertype + flag isFragmented
+		int maxMsgSize = DTSSocket.MAX_FRAME_SIZE - headerSize;
+		int offset = 0;
+		boolean done = false;
 		
-		write(bbuffer.array());
+		byte curretMessage[];
+		ByteBuffer bbuffer;
+		
+		while(!done) {
+		
+			if( headerSize + (msg.length - offset) > DTSSocket.MAX_FRAME_SIZE ) {//Se não cabe em um único frame
+				
+				curretMessage = Arrays.copyOfRange(msg, offset, offset + maxMsgSize);
+				
+				bbuffer = ByteBuffer.allocate(DTSSocket.MAX_FRAME_SIZE);
+				bbuffer.put(addr)
+					.putShort(DTSSocket.ETHERTYPE)
+					.put((byte) 1)
+					.put(curretMessage);
+				
+				offset += maxMsgSize;
+				
+			} else {//Se cabe
+				
+				curretMessage = Arrays.copyOfRange(msg, offset, msg.length);
+				
+				bbuffer = ByteBuffer.allocate(headerSize + curretMessage.length);
+				bbuffer.put(addr)
+					.putShort(DTSSocket.ETHERTYPE)
+					.put((byte) 0)
+					.put(curretMessage);
+				
+				done = true;
+			}
+			
+			write(bbuffer.array());
+		
+		}
+		
 	}
 	
 
